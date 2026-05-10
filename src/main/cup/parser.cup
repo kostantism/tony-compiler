@@ -1,0 +1,217 @@
+package gr.hua.dit.compilers;
+
+import java_cup.runtime.*;
+import gr.hua.dit.compilers.ast.*;
+import java.util.List;
+import java.util.ArrayList;
+
+
+parser code {:
+    // Connect this parser to a scanner!
+    Lexer lexer;
+    public parser(Lexer lexer) {
+        super(lexer);
+        this.lexer = lexer;
+    }
+    
+:}
+
+/* Terminals (tokens returned by the scanner). */
+
+//keywords
+terminal AND, BOOL, CHAR, DECL, DEF, 
+        ELSE, ELSIF, END, EXIT, FALSE, 
+        FOR, HEAD, IF, INT, LIST, 
+        MOD, NEW, NIL, NILQ, NOT, 
+        OR, REF, RETURN, SKIP, TAIL, TRUE; 
+
+//names (variables, functions ...)
+terminal String ID;                                   
+
+//constants 
+terminal Integer INT_CONST;
+terminal Character CHAR_CONST; 
+terminal String STRING_LITERAL;  
+
+//arithmetic operators
+terminal PLUS, MINUS, TIMES, DIV;
+
+//logical operators
+terminal EQUAL, NOT_EQUAL, LESS_THAN, GREATER_THAN, LESS_OR_EQUAL, GREATER_OR_EQUAL;
+
+//list
+terminal CONS;
+
+//separators
+terminal SEMI, LPAREN, RPAREN, LBRACKET, RBRACKET, COMMA, COLON, ASSIGN;
+
+terminal UPLUS, UMINUS;
+
+
+/* Non-terminals */
+non terminal Stmt program;
+non terminal Stmt func_def;
+non terminal HeaderNode header;
+non terminal FormalNode formal;
+non terminal Type type;
+non terminal Stmt func_decl;
+non terminal Stmt var_def;
+non terminal Stmt stmt;
+non terminal Stmt simple;
+non terminal List<Stmt> simple_list;
+non terminal Expr call;
+non terminal Expr atom;
+non terminal Expr expr;
+
+
+non terminal List<Stmt> decl_list;
+non terminal List<ElsifNode> other_cases;
+non terminal List<Stmt> else_case;
+non terminal List<FormalNode> formal_list_option;
+non terminal List<FormalNode> formal_list;
+non terminal List<String> id_list;
+non terminal List<Expr> expr_list;
+non terminal List<Expr> expr_list2;
+non terminal Stmt decl;
+non terminal List<Stmt> stmt_list;
+non terminal List<Stmt> simple_list2;
+
+
+
+precedence left OR;
+precedence left AND;
+precedence right NOT;
+
+precedence nonassoc EQUAL, NOT_EQUAL, LESS_THAN, GREATER_THAN, LESS_OR_EQUAL, GREATER_OR_EQUAL;
+
+precedence right CONS;
+
+precedence left PLUS, MINUS;
+precedence left TIMES, DIV, MOD;
+
+precedence right UPLUS, UMINUS;
+
+
+start with program;
+
+/* The grammar */
+// program ::= SEMI;
+
+program ::= func_def:fdef {: RESULT = fdef; :};
+
+func_def ::= DEF header:h COLON decl_list:defs stmt_list:stmts END {: RESULT = new FuncDefNode(h.getName(), h.getReturnType(), h.getFormals(), defs, stmts); :};
+
+decl ::= func_def:fdef {: RESULT = fdef; :}
+       | func_decl:fdecl {: RESULT = fdecl; :}
+       | var_def:vdef {: RESULT = vdef; :};
+
+decl_list ::= decl_list:l decl:d {: l.add(d); RESULT = l;  :}
+            | {: RESULT = new ArrayList<Stmt>(); :};
+
+stmt_list ::= stmt_list:l stmt:s {: l.add(s); RESULT = l;  :}
+            | stmt:s {: List<Stmt> l = new ArrayList<Stmt>(); l.add(s); RESULT = l; :};
+
+
+header ::= type:t ID:id LPAREN formal_list_option:formals RPAREN {: RESULT = new HeaderNode(id, t, formals); :}
+         | ID:id LPAREN formal_list_option:formals RPAREN {: RESULT = new HeaderNode(id, null, formals); :};
+
+formal_list_option ::= formal:f formal_list:l {: l.add(0, f); RESULT = l;  :}
+    | {: RESULT = new ArrayList<FormalNode>(); :};
+
+formal_list ::= SEMI formal:f formal_list:l {: l.add(0,f); RESULT = l;  :}
+    | {: RESULT = new ArrayList<FormalNode>(); :};
+
+
+formal ::= REF type:t ID:id id_list:idList {: idList.add(0, id); RESULT = new FormalNode(true, t, idList); :}
+         | type:t ID:id id_list:idList {: idList.add(0, id); RESULT = new FormalNode(false, t, idList); :};
+
+id_list ::= COMMA ID:id id_list:l {: l.add(0,id); RESULT = l;  :}
+          | {: RESULT = new ArrayList<String>(); :};
+
+
+type ::= INT {: RESULT = new Type.IntType(); :}
+       | BOOL {: RESULT = new Type.BoolType(); :}
+       | CHAR {: RESULT = new Type.CharType(); :}
+       | type:t LBRACKET RBRACKET {: RESULT = new Type.ArrayType(t); :}
+       | LIST LBRACKET type:t RBRACKET {: RESULT = new Type.ListType(t); :};
+
+
+func_decl ::= DECL header:h {: RESULT = new FuncDeclNode(h.getName(), h.getReturnType(), h.getFormals()); :};
+
+
+var_def ::= type:t ID:id id_list:idList {: idList.add(0, id); RESULT = new VarDefNode(t, idList); :};
+
+
+stmt ::= simple:s {: RESULT = s; :}
+       | EXIT {: RESULT = new ExitNode(); :}
+       | RETURN expr:e {: RESULT = new ReturnNode(e); :}
+       | IF expr:e COLON stmt_list:stmtList other_cases:otherCases else_case:elseCase END {: RESULT = new IfNode(e, stmtList, otherCases, elseCase); :}
+       | FOR simple_list:simpleList1 SEMI expr:e SEMI simple_list:simpleList2 COLON stmt_list:stmtList END {: RESULT = new ForNode(simpleList1, e, simpleList2, stmtList); :};
+
+other_cases ::= ELSIF expr:e COLON stmt_list:l1 other_cases:l2 {: l2.add(0, new ElsifNode(e, l1)); RESULT = l2; :}
+             | {: RESULT = new ArrayList<ElsifNode>(); :};
+
+else_case ::= ELSE COLON stmt_list:l {: RESULT = l; :}
+            | {: RESULT = null; :};
+
+
+simple ::= SKIP {: RESULT = new SkipNode(); :}
+         | atom:a ASSIGN expr:e {: RESULT = new AssignNode(a, e); :}
+         | call:c {: RESULT = new ExprStmtNode(c); :};
+
+
+simple_list ::= simple:s simple_list2:l {: l.add(0,s); RESULT = l; :};
+
+simple_list2 ::= COMMA simple:s simple_list2:l {: l.add(0,s); RESULT = l; :}
+          | {: RESULT = new ArrayList<Stmt>(); :};
+
+
+call ::= ID:id LPAREN expr_list:exprList RPAREN {: RESULT = new CallNode(id, exprList); :};
+
+expr_list ::= expr:e expr_list2:l {: l.add(0, e); RESULT = l; :}
+            | {: RESULT = new ArrayList<Expr>(); :};
+
+expr_list2 ::= COMMA expr:e expr_list2:l {: l.add(0,e); RESULT = l; :}
+             | {: RESULT = new ArrayList<Expr>(); :};
+
+
+atom ::= ID:id {: RESULT = new VariableNode(id); :}
+       | STRING_LITERAL:v {: RESULT = new StringNode(v); :} 
+       | atom:a LBRACKET expr:e RBRACKET {: RESULT = new ArrayAccessNode(a, e); :}
+       | call:c {: RESULT = c; :};
+
+
+expr ::= atom:a {: RESULT = a; :}
+       | INT_CONST:v {: RESULT = new IntNode(v); :}
+       | CHAR_CONST:v {: RESULT = new CharNode(v); :}
+       | LPAREN expr:e RPAREN {: RESULT = e; :}
+       | PLUS expr:e {: RESULT = new UplusNode(e); :}
+       | MINUS expr:e {: RESULT = new UminusNode(e); :} 
+       | NOT expr:e {: RESULT = new NotNode(e); :}
+       | TRUE {: RESULT = new BoolNode(true); :} 
+       | FALSE {: RESULT = new BoolNode(false); :} 
+       | expr:e1 PLUS expr:e2 {: RESULT = new AddNode(e1, e2); :}
+       | expr:e1 MINUS expr:e2 {: RESULT = new SubNode(e1, e2); :}
+       | expr:e1 TIMES expr:e2 {: RESULT = new MultNode(e1, e2); :}
+       | expr:e1 DIV expr:e2 {: RESULT = new DivNode(e1, e2); :}
+       | expr:e1 MOD expr:e2 {: RESULT = new ModNode(e1, e2); :}
+       | expr:e1 EQUAL expr:e2 {: RESULT = new EqNode(e1, e2); :}
+       | expr:e1 NOT_EQUAL expr:e2 {: RESULT = new NeqNode(e1, e2); :}
+       | expr:e1 LESS_THAN expr:e2 {: RESULT = new LtNode(e1, e2); :}
+       | expr:e1 GREATER_THAN expr:e2 {: RESULT = new GtNode(e1, e2); :}
+       | expr:e1 LESS_OR_EQUAL expr:e2 {: RESULT = new LeqNode(e1, e2); :}
+       | expr:e1 GREATER_OR_EQUAL expr:e2 {: RESULT = new GeqNode(e1, e2); :}
+       | expr:e1 AND expr:e2 {: RESULT = new AndNode(e1, e2); :}
+       | expr:e1 OR expr:e2 {: RESULT = new OrNode(e1, e2); :}
+       | expr:e1 CONS expr:e2 {: RESULT = new ConsNode(e1, e2); :}
+       | NEW type:t LBRACKET expr:e RBRACKET {: RESULT = new NewNode(t, e); :}
+       | NIL {: RESULT = new NilNode(); :}
+       | NILQ LPAREN expr:e RPAREN {: RESULT = new NilqNode(e); :}
+       | HEAD LPAREN expr:e RPAREN {: RESULT = new HeadNode(e); :}
+       | TAIL LPAREN expr:e RPAREN {: RESULT = new TailNode(e); :};
+       
+
+
+
+
+
