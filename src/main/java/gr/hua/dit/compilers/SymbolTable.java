@@ -37,7 +37,7 @@ public class SymbolTable {
     }
 
     // public boolean existsInCurrentScope(String name) {
-    //     return symbolTχωσδωζable.peek().containsKey(name);
+    //     return symbolTable.peek().containsKey(name);
     // }
 
     
