@@ -1,17 +1,39 @@
-# Tony Language Compiler (Work in Progress)
+# Tony Language Compiler
 
-This repository contains the ongoing development of a compiler for the **Tony programming language**, a statically typed language. Currently, the project implements the front-end phases of the compiler, including lexical analysis, syntax analysis, and Abstract Syntax Tree (AST) generation.
+This repository contains the development of a compiler for the **Tony programming language**, a statically typed language. Τhe project implements the front-end phases of the compiler, including lexical analysis, syntax analysis, Abstract Syntax Tree (AST) generation, Semantic Analysis & Symbol Table and the Code Generation.
 
-## Project Status: Front-End Completed
-The compiler is currently in its early stages. The following components have been fully implemented:
-- **Lexical Analysis (Lexer):** Tokenizes source code using JFlex.
-- **Syntax Analysis (Parser):** Validates language grammar using LALR parsing (CUP).
-- **AST Generation:** Constructs a complete Abstract Syntax Tree representing the program structure.
+## Compiler Pipeline
+### 1. Lexical Analysis (`lexer.flex`)
+* Built with **JFlex**. Reads input character-by-character and generates `Symbol` tokens for **JavaCUP**.
+* **Keywords & Identifiers:** Supports all keywords (`and`, `bool`, `char`, `decl`, `def`, `elsif`, `nil?`, `ref`, etc.) and matching identifiers `[a-zA-Z][a-zA-Z0-9_?]*`.
+* **String & Character Literals:** Full escape sequence support (`\n`, `\t`, `\r`, `\0`, `\\`, `\'`, `\"`, `\xNN`).
+* **Multi-line Comments:** Implements state-based nested comment tracking (`<* ... *>`) using a dedicated `COMMENT` lexical state and nesting depth counter `c`.
+* **Error Handling:** Unmatched characters trigger an `Illegal character` error; unclosed multi-line comments at EOF trigger an error.
 
-## Features implemented
-* **Lexer (`lexer.flex`):** Handles keywords, identifiers, constants (integers, characters, strings), operators, and comments.
-* **Parser (`parser.cup`):** Implements the formal grammar of Tony, including function definitions, variable declarations, control flow (if, for, exit), and complex expressions.
-* **AST Nodes:** A robust object-oriented structure to represent program elements like `Stmt`, `Expr`, `Type`, and `Decl`.
+### 2. Syntax Analysis & AST Construction (`parser.cup`)
+* Built with **JavaCUP** (LALR(1) parser). Enforces Tony's formal grammar and builds the AST nodes upon rule reduction.
+* **Operator Precedence:**
+  1. `OR`, `AND`, `NOT` (Lowest)
+  2. Comparison operators (`=`, `<>`, `<`, `>`, `<=`, `>=`) and `CONS` (`#`)
+  3. Additive (`+`, `-`) and Multiplicative (`*`, `/`, `MOD`)
+  4. Unary operations (`UPLUS`, `UMINUS`) (Highest)
+* Resolves multi-character operator token conflicts (e.g., matching `:=` before `:` and `<=` before `<`).
+
+### 3. Abstract Syntax Tree (AST) (`ast/`)
+* **`Expr.java` & `Stmt.java`:** Base abstract classes implementing sub-tree printing and the Visitor pattern (`accept(Visitor v)`).
+* **`Decl.java`:** Handles function definitions (`FuncDefNode`), forward declarations (`FuncDeclNode`), and variable declarations (`VarDefNode`).
+* **Control Flow Nodes:** `IfNode` (with `ElsifNode` branches), `ForNode`, `ReturnNode`, `ExitNode`, and `SkipNode`.
+* **Data Structure Nodes:** `ConsNode`, `HeadNode`, `TailNode`, `NilNode`, `NilqNode`, `ArrayAccessNode`, and `NewNode`.
+
+### 4. Semantic Analysis & Symbol Management (`visitors/`, `symbols/`)
+Uses the Visitor Pattern to decouple tree traversal from validation logic:
+* **Symbol Table (`SymbolTable.java`):** Stack of hash maps managing nested lexical scopes (Pascal-style scoping). Supports variable shadow detection (`DuplicateDeclException`), resolution (`UndefinedVarException`), and forward declarations (`decl`).
+* **Scope Checker (`ScopeChecker.java`):** Validates variable/function visibility and populates scope tables.
+* **Type Checker (`TypeChecker.java`):** Validates static types across expressions, array dimensions, function argument lists, and value vs. reference (`ref`) parameter passing semantics.
+
+### 5. Bytecode Generation (`JavaASMGenerator.java`)
+* Uses **OW2 ASM** (`ClassWriter`, `MethodVisitor`) to generate JVM instruction sequences (`ILOAD`, `ASTORE`, `INVOKESTATIC`, `IF_ICMPNE`, etc.).
+* Outputs standalone `.class` bytecode files targeting JVM environments.
 
 ## Examples
 The repository includes a folder with sample programs written in Tony to demonstrate the language's syntax and test the parser's capabilities:
@@ -29,36 +51,60 @@ The repository includes a folder with sample programs written in Tony to demonst
 * **CUP (Construction of Useful Parsers):** LALR parser generator for Java.
 * **Apache Ant/Maven:** (Optional - mention if you use any build tool).
 
-## Key Files
-* `lexer.flex`: JFlex specification for lexical analysis.
-* `parser.cup`: CUP specification for syntax analysis and AST construction.
-* `src/ast/`: Directory containing Java classes for the Abstract Syntax Tree nodes.
+## Runtime Library & Capabilities
 
-## Building the Project
-To generate the executable JAR file, use the provided Maven wrapper from the project's root directory:
+The custom runtime support is defined in `gr.hua.dit.compilers.runtime.TonyRuntime` and `TonyList`.
 
-**Windows:**
-```bash
-./mvnw.cmd clean package
-```
+* **Implemented I/O Functions:**
+  * `puti(int x)`: Prints an integer to standard output.
+  * `puts(String s)`: Prints a string to standard output.
+* *Note:* Other library functions (`geti`, `abs`, `strlen`, etc.) are recognized by the Symbol Table during semantic analysis but currently throw runtime exceptions if invoked during execution.
 
-**Linux/Mac:**
+## Building the Compiler
+
+Build the project and generate the executable compiler JAR using the Maven wrapper:
+
+**Linux / macOS:**
 ```bash
 ./mvnw clean package
 ```
 
-## Execution & Testing
-Running the Lexical/Syntax Analyzer:
-
-**Windows - Linux/Mac:**
-```bash
-java -jar target/compiler-0.1.jar examples/bubblesort.tony
+**Windows (PowerShell / CMD):**
+```cmd
+.\mvnw.cmd clean package
 ```
 
-(You can replace bubblesort.tony with any other file located in the examples folder).
+This generates `target/compiler-0.1.jar`.
 
-You can also run the compiler without providing a file argument. In this case, the analyzer will read input directly from the standard input:
+---
+
+## Execution & Usage
+
+### 1. Compiling a Tony Source File
+Pass a `.tony` source file as the primary argument:
+
+```bash
+java -jar target/compiler-0.1.jar examples/hello.tony
+```
+
+### 2. Interactive Input (`stdin`)
+If no file argument is provided, the compiler reads input directly from standard input:
 
 ```bash
 java -jar target/compiler-0.1.jar
 ```
+
+### 3. Running Generated Bytecode (`.class`)
+To run the generated bytecode file, include the target class directory in your classpath:
+
+**Linux / macOS:**
+```bash
+java -cp ".:target/classes" hello
+```
+
+**Windows:**
+```cmd
+java -cp ".;target/classes" hello
+```
+
+---
