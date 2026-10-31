@@ -2,10 +2,12 @@ package gr.hua.dit.compilers.ast;
 
 import java.util.List;
 
-public class VarDefNode extends Stmt{
+import gr.hua.dit.compilers.visitors.Visitor;
 
-    private Type type;
-    private List<String> varNames;
+public class VarDefNode extends Decl{
+
+    public Type type;
+    public List<String> varNames;
 
     public VarDefNode(Type type, List<String> varNames) {
         this.type = type;
@@ -21,4 +23,7 @@ public class VarDefNode extends Stmt{
         }
     }
     
+    public <T> T accept(Visitor<T> visitor) throws Exception {
+        return visitor.visit(this);
+    }
 }

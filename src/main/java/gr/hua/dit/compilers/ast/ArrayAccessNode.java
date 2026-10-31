@@ -1,9 +1,11 @@
 package gr.hua.dit.compilers.ast;
 
+import gr.hua.dit.compilers.visitors.Visitor;
+
 public class ArrayAccessNode extends Expr {
 
-    private Expr name;
-    private Expr i;
+    public Expr name;
+    public Expr i;
 
     public ArrayAccessNode(Expr name, Expr i) {
         this.name = name;
@@ -17,5 +19,11 @@ public class ArrayAccessNode extends Expr {
         System.out.println(indent + "  Index:");
         i.print(depth + 2);
     }
+
+    public <T> T accept(Visitor<T> visitor) throws Exception {
+        return visitor.visit(this);
+    }
+
+    
     
 }

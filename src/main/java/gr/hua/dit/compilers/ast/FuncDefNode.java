@@ -1,16 +1,22 @@
 package gr.hua.dit.compilers.ast;
 
 import java.util.List;
+import java.util.Map;
 
-public class FuncDefNode extends Stmt{
+import gr.hua.dit.compilers.symbols.SymbolEntry;
+import gr.hua.dit.compilers.visitors.Visitor;
 
-    private String name;
-    private Type returnType;
-    private List<FormalNode> arguments;
-    private List<Stmt> defs;
-    private List<Stmt> stmts;
+public class FuncDefNode extends Decl{
 
-    public FuncDefNode(String name, Type returnType, List<FormalNode> arguments, List<Stmt> defs, List<Stmt> stmts){
+    public String name;
+    public Type returnType;
+    public List<FormalNode> arguments;
+    public List<Decl> defs;
+    public List<Stmt> stmts;
+
+    public Map<String, SymbolEntry> table;
+
+    public FuncDefNode(String name, Type returnType, List<FormalNode> arguments, List<Decl> defs, List<Stmt> stmts){
         this.name = name;
         this.returnType = returnType;
         this. arguments = arguments;
@@ -27,8 +33,15 @@ public class FuncDefNode extends Stmt{
             System.out.println(indent + "  No return type");
         }
         for (FormalNode arg : arguments) arg.print(depth + 1);
-        for (Stmt def : defs) def.print(depth + 1);
+        for (Decl def : defs) {
+            if (def instanceof VarDefNode) ((VarDefNode)def).print(depth + 1);
+            else if (def instanceof FuncDefNode) ((FuncDefNode)def).print(depth + 1);
+        }
         for (Stmt stmt : stmts) stmt.print(depth + 1);
+    }
+
+    public <T>  T accept(Visitor<T> visitor) throws Exception {
+        return visitor.visit(this);
     }
     
 }

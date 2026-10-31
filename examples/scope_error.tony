@@ -1,0 +1,4 @@
+def main():
+  int x
+  y := 10 % y is undefined
+end

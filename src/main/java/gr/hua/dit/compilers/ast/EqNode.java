@@ -1,9 +1,11 @@
 package gr.hua.dit.compilers.ast;
 
+import gr.hua.dit.compilers.visitors.Visitor;
+
 public class EqNode extends Expr {
 
-    private Expr e1;
-    private Expr e2;
+    public Expr e1;
+    public Expr e2;
 
     public EqNode(Expr e1, Expr e2) {
         this.e1 = e1;
@@ -15,6 +17,10 @@ public class EqNode extends Expr {
         System.out.println(indent + "Equal:");
         e1.print(depth + 1);
         e2.print(depth + 1);
+    }
+
+    public <T> T accept(Visitor<T> visitor) throws Exception {
+        return visitor.visit(this);
     }
     
 }

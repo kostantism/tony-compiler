@@ -1,1 +1,16 @@
-'a
+def typeErrors():
+    int x
+    bool b
+    char c
+    int[] arr
+
+    x := true        
+    x := 5 + true    
+
+    if x:           
+        skip
+    end
+
+    arr := new int[10]
+    x := arr[true]   
+end

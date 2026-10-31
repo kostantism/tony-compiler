@@ -1,8 +1,10 @@
 package gr.hua.dit.compilers.ast;
 
+import gr.hua.dit.compilers.visitors.Visitor;
+
 public class ExprStmtNode extends Stmt {
     
-    private Expr expr;
+    public Expr expr;
 
     public ExprStmtNode(Expr expr) {
         this.expr = expr;
@@ -10,5 +12,9 @@ public class ExprStmtNode extends Stmt {
 
     public void print(int depth) {
         expr.print(depth);
+    }
+
+    public <T> T accept(Visitor<T> visitor) throws Exception {
+        return visitor.visit(this);
     }
 }

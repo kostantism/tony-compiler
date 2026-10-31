@@ -2,12 +2,14 @@ package gr.hua.dit.compilers.ast;
 
 import java.util.List;
 
+import gr.hua.dit.compilers.visitors.Visitor;
+
 public class IfNode extends Stmt{
     
-    private Expr condition;
-    private List<Stmt> thenStmts;
-    private List<ElsifNode> elsifs;
-    private List<Stmt> elseStmts;
+    public Expr condition;
+    public List<Stmt> thenStmts;
+    public List<ElsifNode> elsifs;
+    public List<Stmt> elseStmts;
 
     public IfNode(Expr condition, List<Stmt> thenStmts, List<ElsifNode> elsifs, List<Stmt> elseStmts) {
         this.condition = condition;
@@ -27,5 +29,9 @@ public class IfNode extends Stmt{
             System.out.println(indent + "Else:");
             for (Stmt s : elseStmts) s.print(depth + 1);
         }
+    }
+
+    public <T> T accept(Visitor<T> visitor) throws Exception {
+        return visitor.visit(this);
     }
 }

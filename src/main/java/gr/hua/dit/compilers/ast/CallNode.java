@@ -2,9 +2,11 @@ package gr.hua.dit.compilers.ast;
 
 import java.util.List;
 
+import gr.hua.dit.compilers.visitors.Visitor; 
+
 public class CallNode extends Expr {
-    private String functionName;
-    private List<Expr> arguments;
+    public String functionName;
+    public List<Expr> arguments;
      
 
     public CallNode(String functionName, List<Expr> arguments){
@@ -18,5 +20,9 @@ public class CallNode extends Expr {
         for (Expr arg : arguments) {
             arg.print(depth + 1);
         }
+    }
+
+    public <T> T accept(Visitor<T> visitor) throws Exception {
+        return visitor.visit(this);
     }
 }

@@ -2,11 +2,13 @@ package gr.hua.dit.compilers.ast;
 
 import java.util.List;
 
-public class FuncDeclNode extends Stmt{
+import gr.hua.dit.compilers.visitors.Visitor;
+
+public class FuncDeclNode extends Decl{
     
-    private String name;
-    private Type returnType;
-    private List<FormalNode> arguments;
+    public String name;
+    public Type returnType;
+    public List<FormalNode> arguments;
 
     public FuncDeclNode(String name, Type returnType, List<FormalNode> arguments){
         this.name = name;
@@ -23,5 +25,9 @@ public class FuncDeclNode extends Stmt{
             System.out.println(indent + "  No return type");
         }
         for (FormalNode arg : arguments) arg.print(depth + 1);
+    }
+
+    public <T> T accept(Visitor<T> visitor) throws Exception {
+        return visitor.visit(this);
     }
 }

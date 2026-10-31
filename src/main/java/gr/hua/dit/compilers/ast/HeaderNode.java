@@ -2,11 +2,13 @@ package gr.hua.dit.compilers.ast;
 
 import java.util.List;
 
+import gr.hua.dit.compilers.visitors.Visitor;
+
 public class HeaderNode {
     
-    private String name;
-    private Type returnType;
-    private List<FormalNode> formals;
+    public String name;
+    public Type returnType;
+    public List<FormalNode> formals;
 
     public HeaderNode(String name, Type returnType, List<FormalNode> formals) {
         this.name = name;
@@ -29,5 +31,9 @@ public class HeaderNode {
         for (FormalNode f : formals) {
             f.print(depth + 1);
         }
+    }
+
+    public <T> T accept(Visitor<T> visitor) throws Exception {
+        return visitor.visit(this);
     }
 }

@@ -1,9 +1,11 @@
 package gr.hua.dit.compilers.ast;
 
+import gr.hua.dit.compilers.visitors.Visitor;
+
 public class AssignNode extends Stmt{
 
-    private Expr var;
-    private Expr e;
+    public Expr var;
+    public Expr e;
 
     public AssignNode(Expr var, Expr e) {
         this.var = var;
@@ -15,6 +17,10 @@ public class AssignNode extends Stmt{
         System.out.println(indent + "Assign:");
         var.print(depth + 1);
         e.print(depth + 1);
+    }
+
+    public <T> T accept(Visitor<T> visitor) throws Exception {
+        return visitor.visit(this);
     }
     
 }

@@ -2,12 +2,14 @@ package gr.hua.dit.compilers.ast;
 
 import java.util.List;
 
+import gr.hua.dit.compilers.visitors.Visitor;
+
 public class ForNode extends Stmt{
 
-    private List<Stmt> init;
-    private Expr condition;
-    private List<Stmt> step;
-    private List<Stmt> body;
+    public List<Stmt> init;
+    public Expr condition;
+    public List<Stmt> step;
+    public List<Stmt> body;
 
     public ForNode(List<Stmt> init, Expr condition, List<Stmt> step, List<Stmt> body) {
         this.init = init;
@@ -27,6 +29,10 @@ public class ForNode extends Stmt{
         for (Stmt s : step) s.print(depth + 2);
         System.out.println(indent + "  Body:");
         for (Stmt s : body) s.print(depth + 2);
+    }
+
+    public <T> T accept(Visitor<T> visitor) throws Exception {
+        return visitor.visit(this);
     }
     
 }

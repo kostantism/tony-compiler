@@ -1,22 +1,22 @@
-package gr.hua.dit.compilers;
+package gr.hua.dit.compilers.symbols;
 
 import java.util.List;
 
 import gr.hua.dit.compilers.ast.Type;
 
-public class Symbol {
+public class SymbolEntry {
 
-    private String name;
-    private Kind kind;
-    private Type type;
-    private int scope;
-    private String address;
+    public String name;
+    public Kind kind;
+    public Type type;
+    public int scope;
+    public String address;
 
-    private boolean isReference;
-    private List<Type> parameterTypes;
+    public boolean isReference;
+    public List<Type> parameterTypes;
 
-    // Constructor για μεταβλητές
-    public Symbol(String name, Kind kind, Type type, int scope, String address) {
+    //constructor for variables
+    public SymbolEntry(String name, Kind kind, Type type, int scope, String address) {
         this.name = name;
         this.kind = kind;
         this.type = type;
@@ -24,8 +24,8 @@ public class Symbol {
         this.address = address;
     }
 
-    // Constructor για παραμέτρους (για να ξέρουμε αν είναι ref)
-    public Symbol(String name, Kind kind, Type type, int scope, String address, boolean isReference) {
+    //constructor for parameters
+    public SymbolEntry(String name, Kind kind, Type type, int scope, String address, boolean isReference) {
         this.name = name;
         this.kind = kind;
         this.type = type;
@@ -34,8 +34,8 @@ public class Symbol {
         this.isReference = isReference;
     }
 
-    // Constructor για συναρτήσεις (για να ελέγχουμε τα ορίσματα στις κλήσεις)
-    public Symbol(String name, Kind kind, Type type, int scope, String address, List<Type> parameterTypes) {
+    //constructor for functions
+    public SymbolEntry(String name, Kind kind, Type type, int scope, String address, List<Type> parameterTypes) {
         this.name = name;
         this.kind = kind;
         this.type = type;
@@ -51,4 +51,8 @@ public class Symbol {
     public String getAddress() { return address; }
     public boolean isReference() { return isReference; }
     public List<Type> getParameterTypes() { return parameterTypes; }
+
+    public void setAddress(String address) {
+        this.address = address;
+    }
 }
